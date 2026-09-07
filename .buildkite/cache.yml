@@ -1,0 +1,8 @@
+caches:
+  - name: "probe"
+    cache_key:
+      - "probe"
+      - agent: "os"
+      - agent: "arch"
+    target_paths:
+      - "bk-cache-probe"
