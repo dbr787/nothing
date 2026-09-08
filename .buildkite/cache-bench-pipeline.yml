@@ -1,0 +1,238 @@
+# Buildkite Cache cross-platform benchmark.
+#
+# One Python implementation (probes/bench.py) runs on all three platforms so
+# the numbers are directly comparable. Each job generates its fixture, times
+# `cache save`, deletes the target, times `cache restore`, and verifies the
+# tree is intact. Set BENCH_ROUND to a fresh value for each run.
+#
+# Every step is soft_fail: a platform where Buildkite Cache is unavailable
+# should show up as a result, not as a build that stops early.
+
+steps:
+  - group: ":penguin: Linux"
+    key: bench-linux
+    steps:
+      - label: ":penguin: large incompressible / small"
+        key: bench-linux-blob-s
+        agents: { queue: linux-medium }
+        soft_fail: true
+        env:
+          BENCH_SHAPE: "blob"
+          BENCH_SIZE: "s"
+        command: python3 .buildkite/probes/bench.py
+      - label: ":penguin: large incompressible / medium"
+        key: bench-linux-blob-m
+        agents: { queue: linux-medium }
+        soft_fail: true
+        env:
+          BENCH_SHAPE: "blob"
+          BENCH_SIZE: "m"
+        command: python3 .buildkite/probes/bench.py
+      - label: ":penguin: large incompressible / large"
+        key: bench-linux-blob-l
+        agents: { queue: linux-medium }
+        soft_fail: true
+        env:
+          BENCH_SHAPE: "blob"
+          BENCH_SIZE: "l"
+        command: python3 .buildkite/probes/bench.py
+      - label: ":penguin: many tiny files / small"
+        key: bench-linux-many-s
+        agents: { queue: linux-medium }
+        soft_fail: true
+        env:
+          BENCH_SHAPE: "many"
+          BENCH_SIZE: "s"
+        command: python3 .buildkite/probes/bench.py
+      - label: ":penguin: many tiny files / medium"
+        key: bench-linux-many-m
+        agents: { queue: linux-medium }
+        soft_fail: true
+        env:
+          BENCH_SHAPE: "many"
+          BENCH_SIZE: "m"
+        command: python3 .buildkite/probes/bench.py
+      - label: ":penguin: many tiny files / large"
+        key: bench-linux-many-l
+        agents: { queue: linux-medium }
+        soft_fail: true
+        env:
+          BENCH_SHAPE: "many"
+          BENCH_SIZE: "l"
+        command: python3 .buildkite/probes/bench.py
+      - label: ":penguin: compressible text / small"
+        key: bench-linux-text-s
+        agents: { queue: linux-medium }
+        soft_fail: true
+        env:
+          BENCH_SHAPE: "text"
+          BENCH_SIZE: "s"
+        command: python3 .buildkite/probes/bench.py
+      - label: ":penguin: compressible text / medium"
+        key: bench-linux-text-m
+        agents: { queue: linux-medium }
+        soft_fail: true
+        env:
+          BENCH_SHAPE: "text"
+          BENCH_SIZE: "m"
+        command: python3 .buildkite/probes/bench.py
+      - label: ":penguin: compressible text / large"
+        key: bench-linux-text-l
+        agents: { queue: linux-medium }
+        soft_fail: true
+        env:
+          BENCH_SHAPE: "text"
+          BENCH_SIZE: "l"
+        command: python3 .buildkite/probes/bench.py
+
+  - group: ":apple: macOS"
+    key: bench-macos
+    steps:
+      - label: ":apple: large incompressible / small"
+        key: bench-macos-blob-s
+        agents: { queue: macos-medium }
+        soft_fail: true
+        env:
+          BENCH_SHAPE: "blob"
+          BENCH_SIZE: "s"
+        command: python3 .buildkite/probes/bench.py
+      - label: ":apple: large incompressible / medium"
+        key: bench-macos-blob-m
+        agents: { queue: macos-medium }
+        soft_fail: true
+        env:
+          BENCH_SHAPE: "blob"
+          BENCH_SIZE: "m"
+        command: python3 .buildkite/probes/bench.py
+      - label: ":apple: large incompressible / large"
+        key: bench-macos-blob-l
+        agents: { queue: macos-medium }
+        soft_fail: true
+        env:
+          BENCH_SHAPE: "blob"
+          BENCH_SIZE: "l"
+        command: python3 .buildkite/probes/bench.py
+      - label: ":apple: many tiny files / small"
+        key: bench-macos-many-s
+        agents: { queue: macos-medium }
+        soft_fail: true
+        env:
+          BENCH_SHAPE: "many"
+          BENCH_SIZE: "s"
+        command: python3 .buildkite/probes/bench.py
+      - label: ":apple: many tiny files / medium"
+        key: bench-macos-many-m
+        agents: { queue: macos-medium }
+        soft_fail: true
+        env:
+          BENCH_SHAPE: "many"
+          BENCH_SIZE: "m"
+        command: python3 .buildkite/probes/bench.py
+      - label: ":apple: many tiny files / large"
+        key: bench-macos-many-l
+        agents: { queue: macos-medium }
+        soft_fail: true
+        env:
+          BENCH_SHAPE: "many"
+          BENCH_SIZE: "l"
+        command: python3 .buildkite/probes/bench.py
+      - label: ":apple: compressible text / small"
+        key: bench-macos-text-s
+        agents: { queue: macos-medium }
+        soft_fail: true
+        env:
+          BENCH_SHAPE: "text"
+          BENCH_SIZE: "s"
+        command: python3 .buildkite/probes/bench.py
+      - label: ":apple: compressible text / medium"
+        key: bench-macos-text-m
+        agents: { queue: macos-medium }
+        soft_fail: true
+        env:
+          BENCH_SHAPE: "text"
+          BENCH_SIZE: "m"
+        command: python3 .buildkite/probes/bench.py
+      - label: ":apple: compressible text / large"
+        key: bench-macos-text-l
+        agents: { queue: macos-medium }
+        soft_fail: true
+        env:
+          BENCH_SHAPE: "text"
+          BENCH_SIZE: "l"
+        command: python3 .buildkite/probes/bench.py
+
+  - group: ":windows: Windows"
+    key: bench-windows
+    steps:
+      - label: ":windows: large incompressible / small"
+        key: bench-windows-blob-s
+        agents: { queue: windows-medium }
+        soft_fail: true
+        env:
+          BENCH_SHAPE: "blob"
+          BENCH_SIZE: "s"
+        command: python .buildkite\probes\bench.py
+      - label: ":windows: large incompressible / medium"
+        key: bench-windows-blob-m
+        agents: { queue: windows-medium }
+        soft_fail: true
+        env:
+          BENCH_SHAPE: "blob"
+          BENCH_SIZE: "m"
+        command: python .buildkite\probes\bench.py
+      - label: ":windows: large incompressible / large"
+        key: bench-windows-blob-l
+        agents: { queue: windows-medium }
+        soft_fail: true
+        env:
+          BENCH_SHAPE: "blob"
+          BENCH_SIZE: "l"
+        command: python .buildkite\probes\bench.py
+      - label: ":windows: many tiny files / small"
+        key: bench-windows-many-s
+        agents: { queue: windows-medium }
+        soft_fail: true
+        env:
+          BENCH_SHAPE: "many"
+          BENCH_SIZE: "s"
+        command: python .buildkite\probes\bench.py
+      - label: ":windows: many tiny files / medium"
+        key: bench-windows-many-m
+        agents: { queue: windows-medium }
+        soft_fail: true
+        env:
+          BENCH_SHAPE: "many"
+          BENCH_SIZE: "m"
+        command: python .buildkite\probes\bench.py
+      - label: ":windows: many tiny files / large"
+        key: bench-windows-many-l
+        agents: { queue: windows-medium }
+        soft_fail: true
+        env:
+          BENCH_SHAPE: "many"
+          BENCH_SIZE: "l"
+        command: python .buildkite\probes\bench.py
+      - label: ":windows: compressible text / small"
+        key: bench-windows-text-s
+        agents: { queue: windows-medium }
+        soft_fail: true
+        env:
+          BENCH_SHAPE: "text"
+          BENCH_SIZE: "s"
+        command: python .buildkite\probes\bench.py
+      - label: ":windows: compressible text / medium"
+        key: bench-windows-text-m
+        agents: { queue: windows-medium }
+        soft_fail: true
+        env:
+          BENCH_SHAPE: "text"
+          BENCH_SIZE: "m"
+        command: python .buildkite\probes\bench.py
+      - label: ":windows: compressible text / large"
+        key: bench-windows-text-l
+        agents: { queue: windows-medium }
+        soft_fail: true
+        env:
+          BENCH_SHAPE: "text"
+          BENCH_SIZE: "l"
+        command: python .buildkite\probes\bench.py

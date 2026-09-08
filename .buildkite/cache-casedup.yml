@@ -1,0 +1,10 @@
+# Expected to be REJECTED on Windows: the two targets differ only by case and
+# resolve to the same directory on a case-insensitive volume, so they overlap.
+caches:
+  - name: "casedup"
+    cache_key:
+      - "casedup"
+      - "v1"
+    target_paths:
+      - "C:\\bk-casedup"
+      - "C:\\BK-CaseDup"

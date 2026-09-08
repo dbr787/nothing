@@ -1,0 +1,106 @@
+# Buildkite Cache validation on Windows hosted agents.
+#
+# Every step is soft_fail so one broken probe never hides the rest: read the
+# per-job states and the annotations, not the build state.
+#
+# Run this twice on the same branch. The first build is cold (every restore
+# misses and every step saves); the second is warm and is the one that proves
+# restore actually works. Set CACHE_FALLBACK_TOKEN to a different value on the
+# second build to exercise the fallback key.
+
+steps:
+  - group: ":package: Buildkite Cache on Windows"
+    key: cache-probes
+    steps:
+      - label: ":compass: Path anchors"
+        key: cache-anchors
+        agents: { queue: windows-small }
+        soft_fail: true
+        command: powershell -NoProfile -ExecutionPolicy Bypass -File .buildkite\probes\anchors.ps1
+
+      - label: ":lock: Locked and read-only targets"
+        key: cache-locked
+        agents: { queue: windows-small }
+        soft_fail: true
+        command: powershell -NoProfile -ExecutionPolicy Bypass -File .buildkite\probes\locked.ps1
+
+      - label: ":page_facing_up: Attributes, empty dirs, spaces"
+        key: cache-attrs
+        agents: { queue: windows-small }
+        soft_fail: true
+        command: powershell -NoProfile -ExecutionPolicy Bypass -File .buildkite\probes\attrs.ps1
+
+      - label: ":straight_ruler: Long paths past MAX_PATH"
+        key: cache-longpath
+        agents: { queue: windows-small }
+        soft_fail: true
+        command: powershell -NoProfile -ExecutionPolicy Bypass -File .buildkite\probes\longpath.ps1
+
+      - label: ":link: Junctions, hardlinks, symlinks"
+        key: cache-links
+        agents: { queue: windows-small }
+        soft_fail: true
+        command: powershell -NoProfile -ExecutionPolicy Bypass -File .buildkite\probes\links.ps1
+
+      - label: ":mag: Which link type breaks save"
+        key: cache-linktypes
+        agents: { queue: windows-small }
+        soft_fail: true
+        command: powershell -NoProfile -ExecutionPolicy Bypass -File .buildkite\probes\linktypes.ps1
+
+      - label: ":test_tube: Miss, fallback, concurrency, config validation"
+        key: cache-semantics
+        agents: { queue: windows-small }
+        soft_fail: true
+        command: powershell -NoProfile -ExecutionPolicy Bypass -File .buildkite\probes\semantics.ps1
+
+      - label: ":package: npm tree"
+        key: cache-nodemods
+        agents: { queue: windows-medium }
+        soft_fail: true
+        command: powershell -NoProfile -ExecutionPolicy Bypass -File .buildkite\probes\nodemods.ps1
+
+      - label: ":stopwatch: Throughput"
+        key: cache-perf
+        agents: { queue: windows-large }
+        soft_fail: true
+        command: powershell -NoProfile -ExecutionPolicy Bypass -File .buildkite\probes\perf.ps1
+
+      - label: ":arrows_counterclockwise: Concurrent first save"
+        key: cache-race
+        parallelism: 3
+        agents: { queue: windows-medium }
+        soft_fail: true
+        command: powershell -NoProfile -ExecutionPolicy Bypass -File .buildkite\probes\race.ps1
+
+  - group: ":penguin: Cross-platform key collision"
+    key: cache-crossos
+    steps:
+      - label: ":penguin: Save crossos from Linux"
+        key: crossos-linux
+        agents: { queue: linux-small }
+        soft_fail: true
+        command: bash .buildkite/probes/crossos-save.sh
+
+      - label: ":windows: Restore crossos on Windows"
+        key: crossos-windows
+        depends_on: crossos-linux
+        allow_dependency_failure: true
+        agents: { queue: windows-small }
+        soft_fail: true
+        command: powershell -NoProfile -ExecutionPolicy Bypass -File .buildkite\probes\crossos.ps1
+
+  - group: ":closed_lock_with_key: Registry and policy"
+    key: cache-policy
+    steps:
+      - label: ":key: Registry selection and cross-pipeline reach"
+        key: cache-registry
+        agents: { queue: windows-small }
+        soft_fail: true
+        command: powershell -NoProfile -ExecutionPolicy Bypass -File .buildkite\probes\registry.ps1
+
+      - label: ":biohazard: Cross-branch cache poisoning"
+        key: cache-poison
+        agents: { queue: windows-small }
+        soft_fail: true
+        command: powershell -NoProfile -ExecutionPolicy Bypass -File .buildkite\probes\poison.ps1

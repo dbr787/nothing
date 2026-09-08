@@ -1,0 +1,8 @@
+# Registry policy enforcement probe. Drive it with SCOPED_MODE (save|restore),
+# SCOPED_ROUND (fresh per round) and SCOPED_EXPECT (hit|miss).
+steps:
+  - label: ":closed_lock_with_key: Scoped policy"
+    key: cache-scoped
+    agents: { queue: windows-small }
+    soft_fail: true
+    command: powershell -NoProfile -ExecutionPolicy Bypass -File .buildkite\probes\scoped.ps1
