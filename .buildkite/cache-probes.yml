@@ -42,6 +42,12 @@ steps:
         soft_fail: true
         command: powershell -NoProfile -ExecutionPolicy Bypass -File .buildkite\probes\links.ps1
 
+      - label: ":mag: Which link type breaks save"
+        key: cache-linktypes
+        agents: { queue: windows-small }
+        soft_fail: true
+        command: powershell -NoProfile -ExecutionPolicy Bypass -File .buildkite\probes\linktypes.ps1
+
       - label: ":test_tube: Miss, fallback, concurrency, config validation"
         key: cache-semantics
         agents: { queue: windows-small }

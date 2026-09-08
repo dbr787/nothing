@@ -150,3 +150,17 @@ caches:
       - agent: "arch"
     target_paths:
       - "bk-neversaved"
+
+  # Link types isolated so a failure names the exact construct at fault.
+  - name: "link_junction"
+    cache_key: ["link_junction", "v1", {agent: "os"}, {agent: "arch"}, {env: "BUILDKITE_BUILD_NUMBER"}]
+    target_paths: ["bk-link-junction"]
+  - name: "link_symlink"
+    cache_key: ["link_symlink", "v1", {agent: "os"}, {agent: "arch"}, {env: "BUILDKITE_BUILD_NUMBER"}]
+    target_paths: ["bk-link-symlink"]
+  - name: "link_hardlink"
+    cache_key: ["link_hardlink", "v1", {agent: "os"}, {agent: "arch"}, {env: "BUILDKITE_BUILD_NUMBER"}]
+    target_paths: ["bk-link-hardlink"]
+  - name: "link_dirsymlink"
+    cache_key: ["link_dirsymlink", "v1", {agent: "os"}, {agent: "arch"}, {env: "BUILDKITE_BUILD_NUMBER"}]
+    target_paths: ["bk-link-dirsymlink"]
