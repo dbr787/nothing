@@ -7,3 +7,9 @@ steps:
     agents: { queue: windows-small }
     soft_fail: true
     command: powershell -NoProfile -ExecutionPolicy Bypass -File .buildkite\probes\xpipeline.ps1
+
+  - label: ":closed_lock_with_key: Scoped policy from another pipeline"
+    key: cache-scoped-xpipeline
+    agents: { queue: windows-small }
+    soft_fail: true
+    command: powershell -NoProfile -ExecutionPolicy Bypass -File .buildkite\probes\scoped.ps1

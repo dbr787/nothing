@@ -177,3 +177,15 @@ caches:
       - env: "CACHE_POISON_ROUND"
     target_paths:
       - "bk-poison"
+
+  # Registry policy enforcement. The key deliberately omits branch and pipeline,
+  # so the ADDRESS is identical everywhere and any isolation observed comes from
+  # the registry policy's scopes, not from the key.
+  - name: "scoped"
+    cache_key:
+      - "scoped"
+      - agent: "os"
+      - agent: "arch"
+      - env: "SCOPED_ROUND"
+    target_paths:
+      - "bk-scoped"
