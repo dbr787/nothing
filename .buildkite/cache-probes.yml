@@ -89,3 +89,18 @@ steps:
         agents: { queue: windows-small }
         soft_fail: true
         command: powershell -NoProfile -ExecutionPolicy Bypass -File .buildkite\probes\crossos.ps1
+
+  - group: ":closed_lock_with_key: Registry and policy"
+    key: cache-policy
+    steps:
+      - label: ":key: Registry selection and cross-pipeline reach"
+        key: cache-registry
+        agents: { queue: windows-small }
+        soft_fail: true
+        command: powershell -NoProfile -ExecutionPolicy Bypass -File .buildkite\probes\registry.ps1
+
+      - label: ":biohazard: Cross-branch cache poisoning"
+        key: cache-poison
+        agents: { queue: windows-small }
+        soft_fail: true
+        command: powershell -NoProfile -ExecutionPolicy Bypass -File .buildkite\probes\poison.ps1

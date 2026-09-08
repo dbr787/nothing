@@ -164,3 +164,16 @@ caches:
   - name: "link_dirsymlink"
     cache_key: ["link_dirsymlink", "v1", {agent: "os"}, {agent: "arch"}, {env: "BUILDKITE_BUILD_NUMBER"}]
     target_paths: ["bk-link-dirsymlink"]
+
+  # Cross-branch poisoning under the default (unscoped) registry policy.
+  # The key deliberately omits `agent: branch`, which is the default: branch is
+  # only part of a key if the user opts in. CACHE_POISON_ROUND keeps each
+  # round's address fresh, since entries are write-once.
+  - name: "poison"
+    cache_key:
+      - "poison"
+      - agent: "os"
+      - agent: "arch"
+      - env: "CACHE_POISON_ROUND"
+    target_paths:
+      - "bk-poison"
