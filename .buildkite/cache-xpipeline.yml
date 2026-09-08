@@ -1,0 +1,9 @@
+# Decisive cross-pipeline reach test. Run this from a DIFFERENT pipeline than
+# the one that saved the entries, in the same cluster, on the same branch, with
+# the same CACHE_POISON_ROUND.
+steps:
+  - label: ":satellite: Cross-pipeline reach"
+    key: cache-xpipeline
+    agents: { queue: windows-small }
+    soft_fail: true
+    command: powershell -NoProfile -ExecutionPolicy Bypass -File .buildkite\probes\xpipeline.ps1
