@@ -1,4 +1,7 @@
+# Portable cache definitions. Must parse on both Windows and Linux, so no
+# drive-letter absolute paths here (see cache-windows.yml for those).
 caches:
+  # Original round-trip probe from builds 20-22. Unchanged.
   - name: "probe"
     cache_key:
       - "probe"
@@ -6,3 +9,144 @@ caches:
       - agent: "arch"
     target_paths:
       - "bk-cache-probe"
+
+  # Relative and home anchors in one entry. On Windows the checkout is on D:
+  # and the home directory is on C:, so this crosses volumes.
+  - name: "anchors"
+    cache_key:
+      - "anchors"
+      - "v1"
+      - agent: "os"
+      - agent: "arch"
+    target_paths:
+      - "bk-anchor-rel"
+      - "~/bk-anchor-home"
+
+  # Fallback restore. arch is the fallback limit, so the env part below it is
+  # optional on restore. Build 1 sets token=alpha, build 2 sets token=beta:
+  # build 2 must miss the exact key and fall back to build 1's entry.
+  - name: "fallback"
+    cache_key:
+      - "fallback"
+      - "v1"
+      - agent: "os"
+      - agent: "arch"
+        fallback_limit: true
+      - env: "CACHE_FALLBACK_TOKEN"
+    target_paths:
+      - "bk-fallback"
+
+  # Empty directories, spaces in path, read-only / hidden / system attributes.
+  - name: "attrs"
+    cache_key:
+      - "attrs"
+      - "v1"
+      - agent: "os"
+      - agent: "arch"
+    target_paths:
+      - "bk-attrs"
+
+  # Restore must delete the target first. This one is populated with a
+  # read-only file and a file held open by a live process before restore runs.
+  - name: "locked"
+    cache_key:
+      - "locked"
+      - "v1"
+      - agent: "os"
+      - agent: "arch"
+    target_paths:
+      - "bk-locked"
+
+  # Paths beyond the 260-character MAX_PATH limit.
+  - name: "longpath"
+    cache_key:
+      - "longpath"
+      - "v1"
+      - agent: "os"
+      - agent: "arch"
+    target_paths:
+      - "bk-longpath"
+
+  # Directory junction, hardlink and symlink inside a cached tree.
+  - name: "links"
+    cache_key:
+      - "links"
+      - "v1"
+      - agent: "os"
+      - agent: "arch"
+    target_paths:
+      - "bk-links"
+
+  # Real npm tree: thousands of small files, deep nesting, .bin shims.
+  - name: "nodemods"
+    cache_key:
+      - "nodemods"
+      - "v1"
+      - agent: "os"
+      - agent: "arch"
+      - checksum: "app/package.json"
+    target_paths:
+      - "app/node_modules"
+
+  # Throughput: one large incompressible blob.
+  - name: "perf_blob"
+    cache_key:
+      - "perf_blob"
+      - "v1"
+      - agent: "os"
+      - agent: "arch"
+    target_paths:
+      - "bk-perf-blob"
+
+  # Per-file overhead: many tiny files.
+  - name: "perf_many"
+    cache_key:
+      - "perf_many"
+      - "v1"
+      - agent: "os"
+      - agent: "arch"
+    target_paths:
+      - "bk-perf-many"
+
+  # Three caches saved in one `cache save` invocation to exercise the default
+  # concurrency of 2.
+  - name: "conc_a"
+    cache_key: ["conc_a", "v1", {agent: "os"}, {agent: "arch"}]
+    target_paths: ["bk-conc-a"]
+  - name: "conc_b"
+    cache_key: ["conc_b", "v1", {agent: "os"}, {agent: "arch"}]
+    target_paths: ["bk-conc-b"]
+  - name: "conc_c"
+    cache_key: ["conc_c", "v1", {agent: "os"}, {agent: "arch"}]
+    target_paths: ["bk-conc-c"]
+
+  # Three parallel jobs racing to create the same brand-new address.
+  # The build number keeps the address fresh for every build.
+  - name: "race"
+    cache_key:
+      - "race"
+      - "v1"
+      - agent: "os"
+      - agent: "arch"
+      - env: "BUILDKITE_BUILD_NUMBER"
+    target_paths:
+      - "bk-race"
+
+  # Deliberately omits os and arch so a Linux-saved entry is addressable from
+  # Windows. Tests what happens when a user forgets to key on platform.
+  - name: "crossos"
+    cache_key:
+      - "crossos"
+      - "v1"
+    target_paths:
+      - "bk-crossos"
+
+  # Never saved by any step. Restoring it must be a clean miss, exit 0.
+  - name: "neversaved"
+    cache_key:
+      - "neversaved"
+      - "v1"
+      - agent: "os"
+      - agent: "arch"
+    target_paths:
+      - "bk-neversaved"

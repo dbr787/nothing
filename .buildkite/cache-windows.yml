@@ -1,0 +1,21 @@
+# Windows-only definitions: drive-letter absolute paths do not parse as
+# absolute on Linux, so they live in their own config file selected with
+# --cache-config-file.
+caches:
+  - name: "abs"
+    cache_key:
+      - "abs"
+      - "v1"
+      - agent: "os"
+      - agent: "arch"
+    target_paths:
+      - "C:\\bk-anchor-abs"
+
+  - name: "spaces"
+    cache_key:
+      - "spaces"
+      - "v1"
+      - agent: "os"
+      - agent: "arch"
+    target_paths:
+      - "C:\\bk cache with spaces"
