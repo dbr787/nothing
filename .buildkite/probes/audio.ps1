@@ -122,7 +122,8 @@ $player = New-Object System.Media.SoundPlayer $tone
 try { $player.PlaySync(); 'play    : ok' } catch { "play    : FAILED $($_.Exception.Message)" }
 Start-Sleep -Milliseconds 500
 "stop    : $([WinMM]::Mci('stop rec'))"
-"save    : $([WinMM]::Mci("save rec `"$rec`""))"
+$saveCmd = 'save rec "' + $rec + '"'
+"save    : $([WinMM]::Mci($saveCmd))"
 "close   : $([WinMM]::Mci('close rec'))"
 if (Test-Path $rec) {
   $bytes = [IO.File]::ReadAllBytes($rec)
