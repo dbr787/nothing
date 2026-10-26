@@ -1,0 +1,20 @@
+# Answers two questions about the Windows hosted agent default image:
+#   1. Do jobs run in an interactive desktop session, or as a service in session 0?
+#   2. Is Windows Audio present with an output device, and can a job install VB-CABLE?
+# Each step gets a fresh VM, so the install step never pollutes the stock inspection.
+
+steps:
+  - label: ":desktop_computer: Session and desktop"
+    agents: { queue: windows-small }
+    soft_fail: true
+    command: powershell -NoProfile -ExecutionPolicy Bypass -File .buildkite\probes\session.ps1
+
+  - label: ":sound: Audio on the stock image"
+    agents: { queue: windows-small }
+    soft_fail: true
+    command: powershell -NoProfile -ExecutionPolicy Bypass -File .buildkite\probes\audio.ps1
+
+  - label: ":electric_plug: Install VB-CABLE and loop audio through it"
+    agents: { queue: windows-small }
+    soft_fail: true
+    command: powershell -NoProfile -ExecutionPolicy Bypass -File .buildkite\probes\audio.ps1 -Install
