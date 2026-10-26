@@ -116,8 +116,15 @@ for ($i = 0; $i -lt $n; $i++) { $w.Write([int16](12000 * [Math]::Sin(2 * [Math]:
 
 $rec = Join-Path $dir 'recorded.wav'
 "open    : $([WinMM]::Mci('open new type waveaudio alias rec'))"
-"format  : $([WinMM]::Mci('set rec bitspersample 16 channels 1 samplespersec 44100'))"
-"record  : $([WinMM]::Mci('record rec'))"
+# MCI rejects partial format changes, so set every field at once and try the
+# formats the cable is likely to accept in shared mode
+foreach ($f in @(@(48000, 2), @(44100, 2), @(48000, 1), @(44100, 1))) {
+  $r, $ch = $f; $align = $ch * 2
+  "format $r/$ch : $([WinMM]::Mci("set rec alignment $align bitspersample 16 samplespersec $r channels $ch bytespersec $($r * $align)"))"
+  $res = [WinMM]::Mci('record rec')
+  "record  : $res"
+  if ($res -like 'ok*') { break }
+}
 $player = New-Object System.Media.SoundPlayer $tone
 try { $player.PlaySync(); 'play    : ok' } catch { "play    : FAILED $($_.Exception.Message)" }
 Start-Sleep -Milliseconds 500
