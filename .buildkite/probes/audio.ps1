@@ -114,29 +114,69 @@ $w.Write([Text.Encoding]::ASCII.GetBytes('data')); $w.Write([int]($n * 2))
 for ($i = 0; $i -lt $n; $i++) { $w.Write([int16](12000 * [Math]::Sin(2 * [Math]::PI * 440 * $i / $rate))) }
 [IO.File]::WriteAllBytes($tone, $ms.ToArray())
 
-$rec = Join-Path $dir 'recorded.wav'
-"open    : $([WinMM]::Mci('open new type waveaudio alias rec'))"
-# MCI rejects partial format changes, so set every field at once and try the
-# formats the cable is likely to accept in shared mode
-foreach ($f in @(@(48000, 2), @(44100, 2), @(48000, 1), @(44100, 1))) {
-  $r, $ch = $f; $align = $ch * 2
-  "format $r/$ch : $([WinMM]::Mci("set rec alignment $align bitspersample 16 samplespersec $r channels $ch bytespersec $($r * $align)"))"
-  $res = [WinMM]::Mci('record rec')
-  "record  : $res"
-  if ($res -like 'ok*') { break }
+Add-Type -TypeDefinition @'
+using System;
+using System.Runtime.InteropServices;
+using System.Threading;
+public static class WaveIn {
+  [StructLayout(LayoutKind.Sequential)] public struct WAVEFORMATEX {
+    public ushort wFormatTag, nChannels; public uint nSamplesPerSec, nAvgBytesPerSec;
+    public ushort nBlockAlign, wBitsPerSample, cbSize; }
+  [StructLayout(LayoutKind.Sequential)] public struct WAVEHDR {
+    public IntPtr lpData; public uint dwBufferLength, dwBytesRecorded; public IntPtr dwUser;
+    public uint dwFlags, dwLoops; public IntPtr lpNext, reserved; }
+  [DllImport("winmm.dll")] static extern int waveInOpen(out IntPtr h, uint dev, ref WAVEFORMATEX f, IntPtr cb, IntPtr inst, uint flags);
+  [DllImport("winmm.dll")] static extern int waveInPrepareHeader(IntPtr h, IntPtr hdr, int size);
+  [DllImport("winmm.dll")] static extern int waveInUnprepareHeader(IntPtr h, IntPtr hdr, int size);
+  [DllImport("winmm.dll")] static extern int waveInAddBuffer(IntPtr h, IntPtr hdr, int size);
+  [DllImport("winmm.dll")] static extern int waveInStart(IntPtr h);
+  [DllImport("winmm.dll")] static extern int waveInReset(IntPtr h);
+  [DllImport("winmm.dll")] static extern int waveInClose(IntPtr h);
+  // Records ms of 16-bit audio from device 0; returns the peak absolute sample, or throws with the MMRESULT
+  public static int Peak(uint rate, ushort ch, int ms, out int bytes) {
+    var f = new WAVEFORMATEX { wFormatTag = 1, nChannels = ch, nSamplesPerSec = rate, wBitsPerSample = 16,
+      nBlockAlign = (ushort)(ch * 2), nAvgBytesPerSec = rate * (uint)ch * 2 };
+    IntPtr h; int r = waveInOpen(out h, 0, ref f, IntPtr.Zero, IntPtr.Zero, 0);
+    if (r != 0) throw new Exception("waveInOpen MMRESULT " + r);
+    int len = (int)(f.nAvgBytesPerSec * ms / 1000);
+    IntPtr data = Marshal.AllocHGlobal(len);
+    int sz = Marshal.SizeOf(typeof(WAVEHDR));
+    IntPtr hdr = Marshal.AllocHGlobal(sz);
+    Marshal.StructureToPtr(new WAVEHDR { lpData = data, dwBufferLength = (uint)len }, hdr, false);
+    waveInPrepareHeader(h, hdr, sz); waveInAddBuffer(h, hdr, sz);
+    r = waveInStart(h); if (r != 0) throw new Exception("waveInStart MMRESULT " + r);
+    Thread.Sleep(ms + 500);
+    waveInReset(h);
+    var done = (WAVEHDR)Marshal.PtrToStructure(hdr, typeof(WAVEHDR));
+    bytes = (int)done.dwBytesRecorded;
+    int peak = 0;
+    for (int i = 0; i + 1 < bytes; i += 2) { int s = Math.Abs((int)Marshal.ReadInt16(data, i)); if (s > peak) peak = s; }
+    waveInUnprepareHeader(h, hdr, sz); waveInClose(h);
+    Marshal.FreeHGlobal(hdr); Marshal.FreeHGlobal(data);
+    return peak;
+  }
 }
-$player = New-Object System.Media.SoundPlayer $tone
-try { $player.PlaySync(); 'play    : ok' } catch { "play    : FAILED $($_.Exception.Message)" }
-Start-Sleep -Milliseconds 500
-"stop    : $([WinMM]::Mci('stop rec'))"
-$saveCmd = 'save rec "' + $rec + '"'
-"save    : $([WinMM]::Mci($saveCmd))"
-"close   : $([WinMM]::Mci('close rec'))"
-if (Test-Path $rec) {
-  $bytes = [IO.File]::ReadAllBytes($rec)
-  $peak = 0
-  for ($i = 44; $i -lt $bytes.Length - 1; $i += 2) { $s = [Math]::Abs([BitConverter]::ToInt16($bytes, $i)); if ($s -gt $peak) { $peak = $s } }
-  "Recorded $($bytes.Length) bytes, peak amplitude $peak of 32767 (0 = silence)"
-  Copy-Item $rec, $tone .
-  buildkite-agent artifact upload 'recorded.wav;tone.wav'
-} else { 'No recording written' }
+'@
+
+$consent = 'HKCU:\Software\Microsoft\Windows\CurrentVersion\CapabilityAccessManager\ConsentStore\microphone'
+"Microphone consent (HKCU): $((Get-ItemProperty $consent -ErrorAction SilentlyContinue).Value)"
+"Microphone consent (HKLM): $((Get-ItemProperty ($consent -replace 'HKCU', 'HKLM') -ErrorAction SilentlyContinue).Value)"
+
+function Try-Loopback($label) {
+  $player = New-Object System.Media.SoundPlayer $tone
+  foreach ($f in @(@(48000, 2), @(44100, 2), @(48000, 1))) {
+    try {
+      $player.Play()   # async, so capture overlaps playback
+      $bytes = 0
+      $peak = [WaveIn]::Peak($f[0], $f[1], 2000, [ref]$bytes)
+      $player.Stop()
+      "$label $($f[0])/$($f[1]): captured $bytes bytes, peak amplitude $peak of 32767 (0 = silence)"
+      return
+    } catch { $player.Stop(); "$label $($f[0])/$($f[1]): FAILED $($_.Exception.Message)" }
+  }
+}
+
+Try-Loopback 'as shipped     '
+New-Item -Force $consent | Out-Null
+Set-ItemProperty $consent Value Allow
+Try-Loopback 'consent=Allow  '
